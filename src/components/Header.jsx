@@ -1,13 +1,12 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/database'
 
-function Header({ onOpenEnvManager }) {
+function Header({ onOpenEnvManager, onImportCurl }) {
   const environments = useLiveQuery(() => db.environments.toArray())
   const activeEnv = environments?.find((e) => e.isActive === 1)
 
   const setActive = async (id) => {
     if (!environments) return
-    // clear current active, set new one
     await Promise.all(
       environments.map((env) =>
         db.environments.update(env.id, { isActive: env.id === id ? 1 : 0 })
@@ -20,6 +19,14 @@ function Header({ onOpenEnvManager }) {
       <h1 className="text-xl font-semibold text-white">API Tester</h1>
 
       <div className="flex items-center gap-3">
+        <button
+          onClick={onImportCurl}
+          className="text-slate-300 hover:text-white text-sm border border-slate-600 px-3 py-1.5 rounded hover:bg-slate-700"
+          title="Import from cURL"
+        >
+          ↓ Import cURL
+        </button>
+
         <select
           value={activeEnv?.id || ''}
           onChange={(e) => {

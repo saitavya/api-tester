@@ -9,6 +9,7 @@ import RequestPanel from './components/RequestPanel'
 import ResponsePanel from './components/ResponsePanel'
 import EnvironmentManager from './components/EnvironmentManager'
 import SaveRequestModal from './components/SaveRequestModal'
+import ImportCurlModal from './components/ImportCurlModal'
 
 function App() {
   const [method, setMethod] = useState('GET')
@@ -22,6 +23,7 @@ function App() {
 
   const [envManagerOpen, setEnvManagerOpen] = useState(false)
   const [saveModalOpen, setSaveModalOpen] = useState(false)
+  const [importCurlOpen, setImportCurlOpen] = useState(false)
 
   const activeEnv = useLiveQuery(() => db.environments.where('isActive').equals(1).first())
   const envMap = envArrayToMap(activeEnv?.variables)
@@ -63,6 +65,26 @@ function App() {
       })
     return result
   }
+
+  const handleImportCurl = (parsed) => {
+  setMethod(parsed.method)
+  setUrl(parsed.url)
+  setBody(parsed.body || '')
+
+  setHeaders(
+    parsed.headers && parsed.headers.length > 0
+      ? parsed.headers.map((h, i) => ({ id: i + 1, key: h.key, value: h.value, enabled: true }))
+      : [{ id: 1, key: '', value: '', enabled: true }]
+  )
+
+  setParams(
+    parsed.params && parsed.params.length > 0
+      ? parsed.params.map((p, i) => ({ id: i + 1, key: p.key, value: p.value, enabled: true }))
+      : [{ id: 1, key: '', value: '', enabled: true }]
+  )
+
+  setResponse(null)
+}
 
   const loadRequest = (item) => {
     setMethod(item.method)
@@ -162,7 +184,10 @@ function App() {
 
   return (
     <div className="h-screen bg-slate-900 text-white flex flex-col overflow-hidden">
-      <Header onOpenEnvManager={() => setEnvManagerOpen(true)} />
+      <Header
+  onOpenEnvManager={() => setEnvManagerOpen(true)}
+  onImportCurl={() => setImportCurlOpen(true)}
+/>
 
       <div className="flex flex-1 overflow-hidden">
         <Sidebar onLoadRequest={loadRequest} />
@@ -201,6 +226,12 @@ function App() {
         defaultName={`${method} ${url}`}
         onSave={handleSaveRequest}
       />
+
+      <ImportCurlModal
+  isOpen={importCurlOpen}
+  onClose={() => setImportCurlOpen(false)}
+  onImport={handleImportCurl}
+/>
     </div>
   )
 }
