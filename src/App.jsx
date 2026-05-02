@@ -141,7 +141,7 @@ function App() {
       try {
         formattedBody = JSON.stringify(JSON.parse(text), null, 2)
       } catch {
-        // not JSON
+        // not JSON, keep as is
       }
 
       const responseHeaders = {}
