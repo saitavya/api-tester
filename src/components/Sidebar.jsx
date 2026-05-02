@@ -3,12 +3,14 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/database'
 import NewCollectionModal from './NewCollectionModal'
 import ConfirmModal from './ConfirmModal'
+import ImportCollectionModal from './ImportCollectionModal'
 
 function Sidebar({ onLoadRequest }) {
   const [activeTab, setActiveTab] = useState('history')
   const [expandedCollections, setExpandedCollections] = useState({})
   const [newCollectionOpen, setNewCollectionOpen] = useState(false)
   const [confirmState, setConfirmState] = useState(null)
+  const [importOpen, setImportOpen] = useState(false)
 
   const history = useLiveQuery(() =>
     db.history.orderBy('timestamp').reverse().limit(50).toArray()
@@ -118,14 +120,20 @@ function Sidebar({ onLoadRequest }) {
 
           {activeTab === 'collections' && (
             <>
-              <div className="px-4 py-2">
-                <button
-                  onClick={() => setNewCollectionOpen(true)}
-                  className="text-xs text-blue-400 hover:text-blue-300 font-medium"
-                >
-                  + New collection
-                </button>
-              </div>
+              <div className="px-4 py-2 flex items-center gap-3">
+  <button
+    onClick={() => setNewCollectionOpen(true)}
+    className="text-xs text-blue-400 hover:text-blue-300 font-medium"
+  >
+    + New collection
+  </button>
+  <button
+    onClick={() => setImportOpen(true)}
+    className="text-xs text-blue-400 hover:text-blue-300 font-medium"
+  >
+    ↓ Import
+  </button>
+</div>
               {collections && collections.length === 0 && (
                 <div className="px-4 text-slate-400 text-sm">No collections yet</div>
               )}
@@ -188,6 +196,10 @@ function Sidebar({ onLoadRequest }) {
         onClose={() => setNewCollectionOpen(false)}
         onCreate={createCollection}
       />
+      <ImportCollectionModal
+  isOpen={importOpen}
+  onClose={() => setImportOpen(false)}
+/>
 
       <ConfirmModal
         isOpen={!!confirmState}

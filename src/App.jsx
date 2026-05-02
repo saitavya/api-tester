@@ -17,6 +17,8 @@ function App() {
   const [response, setResponse] = useState(null)
   const [loading, setLoading] = useState(false)
 
+  const [auth, setAuth] = useState({ type: 'none' })
+
   const [headers, setHeaders] = useState([{ id: 1, key: '', value: '', enabled: true }])
   const [params, setParams] = useState([{ id: 1, key: '', value: '', enabled: true }])
   const [body, setBody] = useState('')
@@ -31,40 +33,59 @@ function App() {
   const methodSupportsBody = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)
 
   const buildFinalUrl = () => {
-    const substitutedUrl = substituteVariables(url, envMap)
-    const enabledParams = params.filter((p) => p.enabled && p.key)
-    if (enabledParams.length === 0) return substitutedUrl
-    try {
-      const u = new URL(substitutedUrl)
-      enabledParams.forEach((p) =>
-        u.searchParams.append(
-          substituteVariables(p.key, envMap),
-          substituteVariables(p.value, envMap)
-        )
-      )
-      return u.toString()
-    } catch {
-      const qs = enabledParams
-        .map(
-          (p) =>
-            `${encodeURIComponent(substituteVariables(p.key, envMap))}=${encodeURIComponent(
-              substituteVariables(p.value, envMap)
-            )}`
-        )
-        .join('&')
-      return substitutedUrl + (substitutedUrl.includes('?') ? '&' : '?') + qs
-    }
+  const substitutedUrl = substituteVariables(url, envMap)
+  const enabledParams = params.filter((p) => p.enabled && p.key)
+
+  // Add api key as query param if configured that way
+  const allParams = [...enabledParams]
+  if (auth.type === 'apikey' && auth.addTo === 'query' && auth.key && auth.value) {
+    allParams.push({ key: auth.key, value: auth.value, enabled: true })
   }
 
-  const buildHeaders = () => {
-    const result = {}
-    headers
-      .filter((h) => h.enabled && h.key)
-      .forEach((h) => {
-        result[substituteVariables(h.key, envMap)] = substituteVariables(h.value, envMap)
-      })
-    return result
+  if (allParams.length === 0) return substitutedUrl
+  try {
+    const u = new URL(substitutedUrl)
+    allParams.forEach((p) =>
+      u.searchParams.append(
+        substituteVariables(p.key, envMap),
+        substituteVariables(p.value, envMap)
+      )
+    )
+    return u.toString()
+  } catch {
+    const qs = allParams
+      .map(
+        (p) =>
+          `${encodeURIComponent(substituteVariables(p.key, envMap))}=${encodeURIComponent(
+            substituteVariables(p.value, envMap)
+          )}`
+      )
+      .join('&')
+    return substitutedUrl + (substitutedUrl.includes('?') ? '&' : '?') + qs
   }
+}
+
+  const buildHeaders = () => {
+  const result = {}
+  headers
+    .filter((h) => h.enabled && h.key)
+    .forEach((h) => {
+      result[substituteVariables(h.key, envMap)] = substituteVariables(h.value, envMap)
+    })
+
+  // Layer auth on top
+  if (auth.type === 'bearer' && auth.token) {
+    result['Authorization'] = `Bearer ${substituteVariables(auth.token, envMap)}`
+  } else if (auth.type === 'basic' && (auth.username || auth.password)) {
+    const u = substituteVariables(auth.username || '', envMap)
+    const p = substituteVariables(auth.password || '', envMap)
+    result['Authorization'] = `Basic ${btoa(`${u}:${p}`)}`
+  } else if (auth.type === 'apikey' && auth.addTo === 'header' && auth.key && auth.value) {
+    result[substituteVariables(auth.key, envMap)] = substituteVariables(auth.value, envMap)
+  }
+
+  return result
+}
 
   const handleImportCurl = (parsed) => {
   setMethod(parsed.method)
@@ -87,21 +108,22 @@ function App() {
 }
 
   const loadRequest = (item) => {
-    setMethod(item.method)
-    setUrl(item.url)
-    setBody(item.body || '')
-    setHeaders(
-      item.headers && item.headers.length > 0
-        ? item.headers.map((h, i) => ({ ...h, id: i + 1, enabled: true }))
-        : [{ id: 1, key: '', value: '', enabled: true }]
-    )
-    setParams(
-      item.params && item.params.length > 0
-        ? item.params.map((p, i) => ({ ...p, id: i + 1, enabled: true }))
-        : [{ id: 1, key: '', value: '', enabled: true }]
-    )
-    setResponse(null)
-  }
+  setMethod(item.method)
+  setUrl(item.url)
+  setBody(item.body || '')
+  setHeaders(
+    item.headers && item.headers.length > 0
+      ? item.headers.map((h, i) => ({ ...h, id: i + 1, enabled: true }))
+      : [{ id: 1, key: '', value: '', enabled: true }]
+  )
+  setParams(
+    item.params && item.params.length > 0
+      ? item.params.map((p, i) => ({ ...p, id: i + 1, enabled: true }))
+      : [{ id: 1, key: '', value: '', enabled: true }]
+  )
+  setAuth(item.auth || { type: 'none' })
+  setResponse(null)
+}
 
   const openSaveModal = () => {
     if (!url) return
@@ -109,17 +131,18 @@ function App() {
   }
 
   const handleSaveRequest = async (collectionId, requestName) => {
-    await db.requests.add({
-      collectionId,
-      name: requestName,
-      method,
-      url,
-      headers: headers.filter((h) => h.enabled && h.key),
-      params: params.filter((p) => p.enabled && p.key),
-      body,
-      createdAt: Date.now(),
-    })
-  }
+  await db.requests.add({
+    collectionId,
+    name: requestName,
+    method,
+    url,
+    headers: headers.filter((h) => h.enabled && h.key),
+    params: params.filter((p) => p.enabled && p.key),
+    body,
+    auth,
+    createdAt: Date.now(),
+  })
+}
 
   const sendRequest = async () => {
     if (!url) return
@@ -168,6 +191,18 @@ function App() {
         body,
         status: res.status,
       })
+
+      await db.history.add({
+  timestamp: Date.now(),
+  method,
+  url,
+  headers: headers.filter((h) => h.enabled && h.key),
+  params: params.filter((p) => p.enabled && p.key),
+  body,
+  auth,
+  status: res.status,
+})
+
     } catch (err) {
       setResponse({
         status: 0,
@@ -204,14 +239,16 @@ function App() {
             previewUrl={buildFinalUrl()}
           />
           <RequestPanel
-            headers={headers}
-            setHeaders={setHeaders}
-            params={params}
-            setParams={setParams}
-            body={body}
-            setBody={setBody}
-            methodSupportsBody={methodSupportsBody}
-          />
+  headers={headers}
+  setHeaders={setHeaders}
+  params={params}
+  setParams={setParams}
+  body={body}
+  setBody={setBody}
+  methodSupportsBody={methodSupportsBody}
+  auth={auth}
+  setAuth={setAuth}
+/>
           <ResponsePanel response={response} loading={loading} />
         </div>
       </div>

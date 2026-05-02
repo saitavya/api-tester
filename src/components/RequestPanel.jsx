@@ -1,20 +1,35 @@
 import { useState } from 'react'
 import KeyValueEditor from './KeyValueEditor'
+import AuthEditor from './AuthEditor'
 
-function RequestPanel({ headers, setHeaders, params, setParams, body, setBody, methodSupportsBody }) {
+function RequestPanel({
+  headers,
+  setHeaders,
+  params,
+  setParams,
+  body,
+  setBody,
+  methodSupportsBody,
+  auth,
+  setAuth,
+}) {
   const [activeTab, setActiveTab] = useState('params')
 
   const tabs = [
     { id: 'params', label: 'Params' },
+    { id: 'auth', label: 'Auth' },
     { id: 'headers', label: 'Headers' },
     { id: 'body', label: 'Body' },
   ]
 
+  // Visual badge if auth is configured (other than 'none')
+  const authActive = auth && auth.type !== 'none'
+
   const tabClass = (id) =>
-    `px-4 py-2 text-sm ${
+    `px-4 py-2 text-sm border-b-2 ${
       activeTab === id
-        ? 'text-white border-b-2 border-blue-500'
-        : 'text-slate-400 hover:text-white border-b-2 border-transparent'
+        ? 'text-white border-blue-500'
+        : 'text-slate-400 hover:text-white border-transparent'
     }`
 
   return (
@@ -23,6 +38,9 @@ function RequestPanel({ headers, setHeaders, params, setParams, body, setBody, m
         {tabs.map((tab) => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={tabClass(tab.id)}>
             {tab.label}
+            {tab.id === 'auth' && authActive && (
+              <span className="ml-1.5 inline-block w-1.5 h-1.5 bg-green-400 rounded-full align-middle" />
+            )}
           </button>
         ))}
       </div>
@@ -31,6 +49,8 @@ function RequestPanel({ headers, setHeaders, params, setParams, body, setBody, m
         {activeTab === 'params' && (
           <KeyValueEditor items={params} setItems={setParams} keyPlaceholder="Param name" />
         )}
+
+        {activeTab === 'auth' && <AuthEditor auth={auth} setAuth={setAuth} />}
 
         {activeTab === 'headers' && (
           <KeyValueEditor items={headers} setItems={setHeaders} keyPlaceholder="Header name" />
