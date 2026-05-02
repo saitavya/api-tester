@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from './db/database'
 import { substituteVariables, envArrayToMap } from './utils/variables'
+import SaveRequestModal from './components/SaveRequestModal'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import RequestBar from './components/RequestBar'
@@ -15,6 +16,7 @@ function App() {
   const [response, setResponse] = useState(null)
   const [loading, setLoading] = useState(false)
   const [envManagerOpen, setEnvManagerOpen] = useState(false)
+  const [saveModalOpen, setSaveModalOpen] = useState(false)
 
   const [headers, setHeaders] = useState([{ id: 1, key: '', value: '', enabled: true }])
   const [params, setParams] = useState([{ id: 1, key: '', value: '', enabled: true }])
@@ -78,32 +80,49 @@ function App() {
     setResponse(null)
   }
 
-  const saveRequest = async () => {
-    if (!url) return
-    const allCollections = await db.collections.toArray()
-    let collectionId
+  // const saveRequest = async () => {
+  //   if (!url) return
+  //   const allCollections = await db.collections.toArray()
+  //   let collectionId
 
-    if (allCollections.length === 0) {
-      const colName = prompt('Create a new collection. Name:')
-      if (!colName) return
-      collectionId = await db.collections.add({ name: colName.trim(), createdAt: Date.now() })
-    } else {
-      const list = allCollections.map((c, i) => `${i + 1}. ${c.name}`).join('\n')
-      const choice = prompt(
-        `Save to which collection?\n${list}\n${allCollections.length + 1}. + New collection\n\nEnter number:`
-      )
-      const num = parseInt(choice, 10)
-      if (!num) return
-      if (num === allCollections.length + 1) {
-        const colName = prompt('New collection name:')
-        if (!colName) return
-        collectionId = await db.collections.add({ name: colName.trim(), createdAt: Date.now() })
-      } else if (num >= 1 && num <= allCollections.length) {
-        collectionId = allCollections[num - 1].id
-      } else {
-        return
-      }
-    }
+  //   if (allCollections.length === 0) {
+  //     const colName = prompt('Create a new collection. Name:')
+  //     if (!colName) return
+  //     collectionId = await db.collections.add({ name: colName.trim(), createdAt: Date.now() })
+  //   } else {
+  //     const list = allCollections.map((c, i) => `${i + 1}. ${c.name}`).join('\n')
+  //     const choice = prompt(
+  //       `Save to which collection?\n${list}\n${allCollections.length + 1}. + New collection\n\nEnter number:`
+  //     )
+  //     const num = parseInt(choice, 10)
+  //     if (!num) return
+  //     if (num === allCollections.length + 1) {
+  //       const colName = prompt('New collection name:')
+  //       if (!colName) return
+  //       collectionId = await db.collections.add({ name: colName.trim(), createdAt: Date.now() })
+  //     } else if (num >= 1 && num <= allCollections.length) {
+  //       collectionId = allCollections[num - 1].id
+  //     } else {
+  //       return
+  //     }
+  //   }
+  const openSaveModal = () => {
+  if (!url) return
+  setSaveModalOpen(true)
+}
+
+const handleSaveRequest = async (collectionId, requestName) => {
+  await db.requests.add({
+    collectionId,
+    name: requestName,
+    method,
+    url,
+    headers: headers.filter((h) => h.enabled && h.key),
+    params: params.filter((p) => p.enabled && p.key),
+    body,
+    createdAt: Date.now(),
+  })
+}
 
     const requestName = prompt('Name this request:', `${method} ${url}`)
     if (!requestName) return
@@ -141,7 +160,7 @@ function App() {
       try {
         formattedBody = JSON.stringify(JSON.parse(text), null, 2)
       } catch {
-        // not JSON, keep as is
+        // not JSON, keep 
       }
 
       const responseHeaders = {}
@@ -188,15 +207,15 @@ function App() {
         <Sidebar onLoadRequest={loadRequest} />
         <div className="flex-1 flex flex-col overflow-y-auto">
           <RequestBar
-            method={method}
-            setMethod={setMethod}
-            url={url}
-            setUrl={setUrl}
-            onSend={sendRequest}
-            onSave={saveRequest}
-            loading={loading}
-            previewUrl={buildFinalUrl()}
-          />
+  method={method}
+  setMethod={setMethod}
+  url={url}
+  setUrl={setUrl}
+  onSend={sendRequest}
+  onSave={openSaveModal}
+  loading={loading}
+  previewUrl={buildFinalUrl()}
+/>
           <RequestPanel
             headers={headers}
             setHeaders={setHeaders}
@@ -210,6 +229,12 @@ function App() {
         </div>
       </div>
       {envManagerOpen && <EnvironmentManager onClose={() => setEnvManagerOpen(false)} />}
+        <SaveRequestModal
+  isOpen={saveModalOpen}
+  onClose={() => setSaveModalOpen(false)}
+  defaultName={`${method} ${url}`}
+  onSave={handleSaveRequest}
+/>
     </div>
   )
 }
