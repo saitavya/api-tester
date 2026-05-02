@@ -1,16 +1,44 @@
-# React + Vite
+# API Tester
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A browser-based API client — a lightweight, open-source alternative to Postman, built with React.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- 🚀 Send HTTP requests (GET, POST, PUT, PATCH, DELETE)
+- 📦 Custom headers, query params, and JSON bodies
+- 🎨 Pretty-printed JSON responses with color-coded status
+- 💾 Auto-saved request history (persists across sessions)
+- 📁 Named collections of saved requests
+- 🌍 Environments with `{{variable}}` substitution
+- 🔒 Fully client-side — your data never leaves your browser
 
-## React Compiler
+## Tech stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **React** + **Vite** for the UI
+- **Tailwind CSS** for styling
+- **Dexie.js** (IndexedDB wrapper) for persistence
+- **No backend** — runs entirely in the browser
 
-## Expanding the ESLint configuration
+## Getting started
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+npm install
+npm run dev
+```
+
+Open http://localhost:5173 in your browser.
+
+## Roadmap
+
+- [ ] CORS proxy for testing any API
+- [ ] Pre-request and test scripts
+- [ ] OAuth 2.0 helpers
+- [ ] Postman collection import/export
+- [ ] GraphQL support
+- [ ] Team sync
+
+## Why I built this
+
+I wanted to deeply understand what powers tools like Postman — HTTP internals, browser
+storage, React state management, and developer-tooling UX. This project covers all of
+that and more.
