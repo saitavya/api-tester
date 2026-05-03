@@ -15,6 +15,7 @@ import SettingsModal from './components/SettingsModal'
 import { useEffect } from 'react'
 import { useSettings } from './hooks/useSettings'
 
+
 function App() {
   const [method, setMethod] = useState('GET')
   const [url, setUrl] = useState('')
@@ -25,6 +26,7 @@ function App() {
   const [useProxy, setUseProxy] = useState(false)
 const { settings: appSettings } = useSettings()
 const proxyAvailable = !!(appSettings.proxyUrl && appSettings.proxyUrl.trim())
+const [bodyType, setBodyType] = useState('json')
 
   const [auth, setAuth] = useState({ type: 'none' })
 
@@ -124,6 +126,7 @@ const proxyAvailable = !!(appSettings.proxyUrl && appSettings.proxyUrl.trim())
   setMethod(item.method)
   setUrl(item.url)
   setBody(item.body || '')
+  setBodyType(item.bodyType || 'json')
   setHeaders(
     item.headers && item.headers.length > 0
       ? item.headers.map((h, i) => ({ ...h, id: i + 1, enabled: true }))
@@ -145,16 +148,17 @@ const proxyAvailable = !!(appSettings.proxyUrl && appSettings.proxyUrl.trim())
 
   const handleSaveRequest = async (collectionId, requestName) => {
   await db.requests.add({
-    collectionId,
-    name: requestName,
-    method,
-    url,
-    headers: headers.filter((h) => h.enabled && h.key),
-    params: params.filter((p) => p.enabled && p.key),
-    body,
-    auth,
-    createdAt: Date.now(),
-  })
+  collectionId,
+  name: requestName,
+  method,
+  url,
+  headers: headers.filter((h) => h.enabled && h.key),
+  params: params.filter((p) => p.enabled && p.key),
+  body,
+  bodyType,        // ← add this
+  auth,
+  createdAt: Date.now(),
+})
 }
 
   const sendRequest = async () => {
@@ -273,6 +277,8 @@ const res = await fetch(actualUrl, fetchOptions)
   setParams={setParams}
   body={body}
   setBody={setBody}
+  bodyType={bodyType}
+  setBodyType={setBodyType}
   methodSupportsBody={methodSupportsBody}
   auth={auth}
   setAuth={setAuth}

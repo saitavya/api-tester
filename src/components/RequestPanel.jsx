@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import KeyValueEditor from './KeyValueEditor'
 import AuthEditor from './AuthEditor'
+import BodyEditor from './BodyEditor'
 
 function RequestPanel({
   headers,
@@ -9,6 +10,8 @@ function RequestPanel({
   setParams,
   body,
   setBody,
+  bodyType,
+  setBodyType,
   methodSupportsBody,
   auth,
   setAuth,
@@ -23,6 +26,7 @@ function RequestPanel({
   ]
 
   const authActive = auth && auth.type !== 'none'
+  const bodyActive = !!(body && body.trim())
 
   const tabClass = (id) =>
     `px-4 py-2 text-sm border-b-2 ${
@@ -30,6 +34,10 @@ function RequestPanel({
         ? 'text-white border-blue-500'
         : 'text-slate-400 hover:text-white border-transparent'
     }`
+
+  const dot = (
+    <span className="ml-1.5 inline-block w-1.5 h-1.5 bg-green-400 rounded-full align-middle" />
+  )
 
   return (
     <div className="bg-slate-900 border-b border-slate-700">
@@ -41,9 +49,8 @@ function RequestPanel({
             className={tabClass(tab.id)}
           >
             {tab.label}
-            {tab.id === 'auth' && authActive && (
-              <span className="ml-1.5 inline-block w-1.5 h-1.5 bg-green-400 rounded-full align-middle" />
-            )}
+            {tab.id === 'auth' && authActive && dot}
+            {tab.id === 'body' && bodyActive && dot}
           </button>
         ))}
       </div>
@@ -60,24 +67,13 @@ function RequestPanel({
         )}
 
         {activeTab === 'body' && (
-          <div>
-            {!methodSupportsBody && (
-              <div className="text-slate-400 text-sm mb-2">
-                Body is typically used with POST, PUT, PATCH, or DELETE.
-              </div>
-            )}
-            <textarea
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              placeholder='{ "key": "value" }'
-              className="w-full h-48 bg-slate-700 text-white px-3 py-2 rounded border border-slate-600 placeholder-slate-400 font-mono text-sm resize-none"
-            />
-            <div className="text-slate-500 text-xs mt-2">
-              Tip: add a{' '}
-              <code className="bg-slate-700 px-1 rounded">Content-Type: application/json</code>{' '}
-              header for JSON bodies.
-            </div>
-          </div>
+          <BodyEditor
+            body={body}
+            setBody={setBody}
+            bodyType={bodyType}
+            setBodyType={setBodyType}
+            methodSupportsBody={methodSupportsBody}
+          />
         )}
       </div>
     </div>
