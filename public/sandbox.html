@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Sandbox</title>
+</head>
+<body>
+<script>
+  // This script runs inside the sandboxed iframe.
+  // It has no access to the parent's window, IndexedDB, cookies, or DOM.
+  // The only channel out is window.parent.postMessage().
+
+  (function () {
+    'use strict';
+
+    function send(payload) {
+      // We don't restrict origin here because the sandbox iframe runs at
+      // origin "null" (sandboxing strips the origin) and we'll verify on
+      // the parent side.
+      window.parent.postMessage(payload, '*');
+    }
+
+    function runUserScript(message) {
+      const { id, code, ctx } = message;
+
+      const consoleLog = [];
+      const envSet = {};
+      const envUnset = [];
+      const tests = [];
+
+      // Build the pm.* API surface the script will see.
+      // Anything we don't expose here, the script can't reach.
+      const pm = {
+        environment: {
+          get(key) {
+            if (envSet.hasOwnProperty(key)) return envSet[key];
+            if (envUnset.includes(key)) return undefined;
+            return ctx.env && ctx.env[key];
+          },
+          set(key, value) {
+            const stringValue = value == null ? '' : String(value);
+            envSet[key] = stringValue;
+            const idx = envUnset.indexOf(key);
+            if (idx !== -1) envUnset.splice(idx, 1);
+          },
+          unset(key) {
+            delete envSet[key];
+            if (!envUnset.includes(key)) envUnset.push(key);
+          },
+        },
+
+        // Minimal expect — we'll expand in M3
+        expect(actual) {
+          return {
+            toBe(expected) {
+              if (actual !== expected) {
+                throw new Error('Expected ' + JSON.stringify(expected) + ', got ' + JSON.stringify(actual));
+              }
+            },
+            toBeDefined() {
+              if (actual === undefined) {
+                throw new Error('Expected value to be defined, got undefined');
+              }
+            },
+          };
+        },
+
+        // Test scaffolding — collects pass/fail
+        test(name, fn) {
+          try {
+            fn();
+            tests.push({ name: String(name), passed: true });
+          } catch (err) {
+            tests.push({
+              name: String(name),
+              passed: false,
+              error: err && err.message ? err.message : String(err),
+            });
+          }
+        },
+
+        // Response is provided by the host when running test scripts.
+        // For pre-request scripts, ctx.response will be undefined.
+        response: ctx.response
+          ? {
+              status: ctx.response.status,
+              headers: ctx.response.headers || {},
+              text: function () {
+                return ctx.response.body || '';
+              },
+              json: function () {
+                try {
+                  return JSON.parse(ctx.response.body || '');
+                } catch (e) {
+                  throw new Error('Response body is not valid JSON');
+                }
+              },
+            }
+          : undefined,
+      };
+
+      // Capture console output
+      const sandboxConsole = {
+        log: function () {
+          const args = Array.prototype.slice.call(arguments);
+          consoleLog.push({
+            level: 'log',
+            args: args.map(serializeForLog),
+          });
+        },
+        error: function () {
+          const args = Array.prototype.slice.call(arguments);
+          consoleLog.push({
+            level: 'error',
+            args: args.map(serializeForLog),
+          });
+        },
+        warn: function () {
+          const args = Array.prototype.slice.call(arguments);
+          consoleLog.push({
+            level: 'warn',
+            args: args.map(serializeForLog),
+          });
+        },
+      };
+
+      function serializeForLog(value) {
+        if (value === undefined) return 'undefined';
+        if (value === null) return 'null';
+        if (typeof value === 'string') return value;
+        try {
+          return JSON.stringify(value);
+        } catch {
+          return String(value);
+        }
+      }
+
+      // Run the user code with pm and console available as locals.
+      // Wrapped in async function so users can use top-level await.
+      let scriptError = null;
+      try {
+        const fn = new Function('pm', 'console', '"use strict"; return (async () => { ' + code + ' })()');
+        const maybePromise = fn(pm, sandboxConsole);
+        if (maybePromise && typeof maybePromise.then === 'function') {
+          maybePromise
+            .then(() => finish(null))
+            .catch((err) => finish(err));
+          return; // async path will call finish later
+        }
+      } catch (err) {
+        scriptError = err;
+      }
+
+      finish(scriptError);
+
+      function finish(err) {
+        send({
+          type: 'done',
+          id: id,
+          tests: tests,
+          envChanges: { set: envSet, unset: envUnset },
+          consoleLog: consoleLog,
+          error: err ? (err.message || String(err)) : null,
+        });
+      }
+    }
+
+    window.addEventListener('message', function (event) {
+      const data = event.data;
+      if (!data || typeof data !== 'object') return;
+      if (data.type !== 'run') return;
+      runUserScript(data);
+    });
+
+    // Tell the parent we're ready
+    send({ type: 'ready' });
+  })();
+</script>
+</body>
+</html>

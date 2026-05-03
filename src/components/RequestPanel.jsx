@@ -1,27 +1,6 @@
 import { useState } from 'react'
 import KeyValueEditor from './KeyValueEditor'
 import AuthEditor from './AuthEditor'
-import CodeEditor from './CodeEditor'
-
-const PRE_REQUEST_PLACEHOLDER = `// Runs before the request is sent.
-// Use the pm.* API to set environment variables, etc.
-//
-// Example:
-//   pm.environment.set('timestamp', Date.now());
-//   const token = pm.environment.get('refreshToken');
-`
-
-const TEST_SCRIPT_PLACEHOLDER = `// Runs after the response arrives.
-// Use pm.test() to define assertions.
-//
-// Example:
-//   pm.test('status is 200', () => {
-//     pm.expect(pm.response.status).toBe(200);
-//   });
-//
-//   const json = pm.response.json();
-//   pm.environment.set('userId', json.id);
-`
 
 function RequestPanel({
   headers,
@@ -33,10 +12,6 @@ function RequestPanel({
   methodSupportsBody,
   auth,
   setAuth,
-  preRequestScript,
-  setPreRequestScript,
-  testScript,
-  setTestScript,
 }) {
   const [activeTab, setActiveTab] = useState('params')
 
@@ -45,13 +20,9 @@ function RequestPanel({
     { id: 'auth', label: 'Auth' },
     { id: 'headers', label: 'Headers' },
     { id: 'body', label: 'Body' },
-    { id: 'preRequest', label: 'Pre-request' },
-    { id: 'tests', label: 'Tests' },
   ]
 
   const authActive = auth && auth.type !== 'none'
-  const preRequestActive = !!(preRequestScript && preRequestScript.trim())
-  const testActive = !!(testScript && testScript.trim())
 
   const tabClass = (id) =>
     `px-4 py-2 text-sm border-b-2 ${
@@ -59,10 +30,6 @@ function RequestPanel({
         ? 'text-white border-blue-500'
         : 'text-slate-400 hover:text-white border-transparent'
     }`
-
-  const dot = (
-    <span className="ml-1.5 inline-block w-1.5 h-1.5 bg-green-400 rounded-full align-middle" />
-  )
 
   return (
     <div className="bg-slate-900 border-b border-slate-700">
@@ -74,9 +41,9 @@ function RequestPanel({
             className={tabClass(tab.id)}
           >
             {tab.label}
-            {tab.id === 'auth' && authActive && dot}
-            {tab.id === 'preRequest' && preRequestActive && dot}
-            {tab.id === 'tests' && testActive && dot}
+            {tab.id === 'auth' && authActive && (
+              <span className="ml-1.5 inline-block w-1.5 h-1.5 bg-green-400 rounded-full align-middle" />
+            )}
           </button>
         ))}
       </div>
@@ -110,40 +77,6 @@ function RequestPanel({
               <code className="bg-slate-700 px-1 rounded">Content-Type: application/json</code>{' '}
               header for JSON bodies.
             </div>
-          </div>
-        )}
-
-        {activeTab === 'preRequest' && (
-          <div>
-            <p className="text-xs text-slate-400 mb-2">
-              JavaScript that runs <strong className="text-slate-300">before</strong> the
-              request is sent. Useful for generating timestamps, refreshing tokens, or
-              computing dynamic values.
-            </p>
-            <CodeEditor
-              value={preRequestScript || ''}
-              onChange={setPreRequestScript}
-              language="javascript"
-              height="220px"
-              placeholder={PRE_REQUEST_PLACEHOLDER}
-            />
-          </div>
-        )}
-
-        {activeTab === 'tests' && (
-          <div>
-            <p className="text-xs text-slate-400 mb-2">
-              JavaScript that runs <strong className="text-slate-300">after</strong> the
-              response arrives. Use <code className="bg-slate-700 px-1 rounded">pm.test()</code>{' '}
-              to define assertions.
-            </p>
-            <CodeEditor
-              value={testScript || ''}
-              onChange={setTestScript}
-              language="javascript"
-              height="220px"
-              placeholder={TEST_SCRIPT_PLACEHOLDER}
-            />
           </div>
         )}
       </div>
