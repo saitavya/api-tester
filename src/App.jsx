@@ -191,19 +191,9 @@ function App() {
         headers: headers.filter((h) => h.enabled && h.key),
         params: params.filter((p) => p.enabled && p.key),
         body,
+        auth,
         status: res.status,
       })
-
-      await db.history.add({
-  timestamp: Date.now(),
-  method,
-  url,
-  headers: headers.filter((h) => h.enabled && h.key),
-  params: params.filter((p) => p.enabled && p.key),
-  body,
-  auth,
-  status: res.status,
-})
 
     } catch (err) {
       setResponse({
@@ -218,6 +208,7 @@ function App() {
       setLoading(false)
     }
   }
+
   const currentRequest = {
   method,
   url,
@@ -248,9 +239,6 @@ function App() {
   onShowCode={() => setCodeModalOpen(true)}
   loading={loading}
   previewUrl={buildFinalUrl()}
-  proxyAvailable={proxyAvailable}
-  useProxy={useProxy}
-  setUseProxy={setUseProxy}
 />
           <RequestPanel
   headers={headers}

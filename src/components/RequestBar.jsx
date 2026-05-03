@@ -8,10 +8,13 @@ function RequestBar({
   onShowCode,
   loading,
   previewUrl,
-  proxyAvailable,
-  useProxy,
-  setUseProxy,
 }) {
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      onSend()
+    }
+  }
 
   const showPreview = url && previewUrl && url !== previewUrl
 
