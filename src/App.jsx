@@ -10,12 +10,14 @@ import ResponsePanel from './components/ResponsePanel'
 import EnvironmentManager from './components/EnvironmentManager'
 import SaveRequestModal from './components/SaveRequestModal'
 import ImportCurlModal from './components/ImportCurlModal'
+import CodeSnippetModal from './components/CodeSnippetModal'
 
 function App() {
   const [method, setMethod] = useState('GET')
   const [url, setUrl] = useState('')
   const [response, setResponse] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [codeModalOpen, setCodeModalOpen] = useState(false)
 
   const [auth, setAuth] = useState({ type: 'none' })
 
@@ -216,6 +218,14 @@ function App() {
       setLoading(false)
     }
   }
+  const currentRequest = {
+  method,
+  url,
+  headers,
+  params,
+  body,
+  auth,
+}
 
   return (
     <div className="h-screen bg-slate-900 text-white flex flex-col overflow-hidden">
@@ -229,15 +239,19 @@ function App() {
 
         <div className="flex-1 flex flex-col overflow-y-auto">
           <RequestBar
-            method={method}
-            setMethod={setMethod}
-            url={url}
-            setUrl={setUrl}
-            onSend={sendRequest}
-            onSave={openSaveModal}
-            loading={loading}
-            previewUrl={buildFinalUrl()}
-          />
+  method={method}
+  setMethod={setMethod}
+  url={url}
+  setUrl={setUrl}
+  onSend={sendRequest}
+  onSave={openSaveModal}
+  onShowCode={() => setCodeModalOpen(true)}
+  loading={loading}
+  previewUrl={buildFinalUrl()}
+  proxyAvailable={proxyAvailable}
+  useProxy={useProxy}
+  setUseProxy={setUseProxy}
+/>
           <RequestPanel
   headers={headers}
   setHeaders={setHeaders}
@@ -268,6 +282,11 @@ function App() {
   isOpen={importCurlOpen}
   onClose={() => setImportCurlOpen(false)}
   onImport={handleImportCurl}
+/>
+<CodeSnippetModal
+  isOpen={codeModalOpen}
+  onClose={() => setCodeModalOpen(false)}
+  request={currentRequest}
 />
     </div>
   )

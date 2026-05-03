@@ -1,7 +1,17 @@
-function RequestBar({ method, setMethod, url, setUrl, onSend, onSave, loading, previewUrl }) {
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') onSend()
-  }
+function RequestBar({
+  method,
+  setMethod,
+  url,
+  setUrl,
+  onSend,
+  onSave,
+  onShowCode,
+  loading,
+  previewUrl,
+  proxyAvailable,
+  useProxy,
+  setUseProxy,
+}) {
 
   const showPreview = url && previewUrl && url !== previewUrl
 
@@ -44,6 +54,15 @@ function RequestBar({ method, setMethod, url, setUrl, onSend, onSave, loading, p
         >
           Save
         </button>
+
+        <button
+  onClick={onShowCode}
+  disabled={!url}
+  className="bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded font-medium border border-slate-600"
+  title="Show code snippet"
+>
+  &lt;/&gt;
+</button>
       </div>
 
       {showPreview && (
