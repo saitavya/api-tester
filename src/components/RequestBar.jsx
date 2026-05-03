@@ -8,6 +8,9 @@ function RequestBar({
   onShowCode,
   loading,
   previewUrl,
+  proxyAvailable,
+  useProxy,
+  setUseProxy,
 }) {
 
   const handleKeyDown = (e) => {
@@ -68,11 +71,35 @@ function RequestBar({
 </button>
       </div>
 
-      {showPreview && (
-        <div className="px-4 pb-3 text-xs text-slate-400 truncate" title={previewUrl}>
-          → <span className="text-slate-300 font-mono">{previewUrl}</span>
-        </div>
-      )}
+      <div className="px-4 pb-3 flex items-center justify-between gap-3 flex-wrap">
+  {showPreview ? (
+    <div className="text-xs text-slate-400 truncate flex-1" title={previewUrl}>
+      → <span className="text-slate-300 font-mono">{previewUrl}</span>
+    </div>
+  ) : (
+    <div className="flex-1" />
+  )}
+
+  <label
+    className={`flex items-center gap-2 text-xs ${
+      proxyAvailable ? 'text-slate-300 cursor-pointer' : 'text-slate-600 cursor-not-allowed'
+    }`}
+    title={
+      proxyAvailable
+        ? 'Route this request through your CORS proxy'
+        : 'Configure a proxy in Settings to enable'
+    }
+  >
+    <input
+      type="checkbox"
+      checked={useProxy}
+      onChange={(e) => setUseProxy(e.target.checked)}
+      disabled={!proxyAvailable}
+      className="w-3.5 h-3.5"
+    />
+    Use proxy
+  </label>
+</div>
     </div>
   )
 }

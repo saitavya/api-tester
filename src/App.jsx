@@ -11,6 +11,9 @@ import EnvironmentManager from './components/EnvironmentManager'
 import SaveRequestModal from './components/SaveRequestModal'
 import ImportCurlModal from './components/ImportCurlModal'
 import CodeSnippetModal from './components/CodeSnippetModal'
+import SettingsModal from './components/SettingsModal'
+import { useEffect } from 'react'
+import { useSettings } from './hooks/useSettings'
 
 function App() {
   const [method, setMethod] = useState('GET')
@@ -18,6 +21,10 @@ function App() {
   const [response, setResponse] = useState(null)
   const [loading, setLoading] = useState(false)
   const [codeModalOpen, setCodeModalOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [useProxy, setUseProxy] = useState(false)
+const { settings: appSettings } = useSettings()
+const proxyAvailable = !!(appSettings.proxyUrl && appSettings.proxyUrl.trim())
 
   const [auth, setAuth] = useState({ type: 'none' })
 
@@ -33,6 +40,10 @@ function App() {
   const envMap = envArrayToMap(activeEnv?.variables)
 
   const methodSupportsBody = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)
+
+  useEffect(() => {
+    setUseProxy(!!appSettings.proxyEnabled && proxyAvailable)
+  }, [appSettings.proxyEnabled, proxyAvailable])
 
   const buildFinalUrl = () => {
   const substitutedUrl = substituteVariables(url, envMap)
@@ -151,15 +162,21 @@ function App() {
     setLoading(true)
     setResponse(null)
     const startTime = Date.now()
-
     try {
       const finalUrl = buildFinalUrl()
-      const fetchOptions = { method, headers: buildHeaders() }
-      if (methodSupportsBody && body.trim()) {
-        fetchOptions.body = substituteVariables(body, envMap)
-      }
+const fetchOptions = { method, headers: buildHeaders() }
+if (methodSupportsBody && body.trim()) {
+  fetchOptions.body = substituteVariables(body, envMap)
+}
 
-      const res = await fetch(finalUrl, fetchOptions)
+let actualUrl = finalUrl
+if (useProxy && proxyAvailable) {
+  const proxyBase = appSettings.proxyUrl.trim().replace(/\/$/, '')
+  actualUrl = `${proxyBase}/?url=${encodeURIComponent(finalUrl)}`
+}
+    
+
+const res = await fetch(actualUrl, fetchOptions)
       const elapsed = Date.now() - startTime
       const text = await res.text()
 
@@ -223,6 +240,12 @@ function App() {
       <Header
   onOpenEnvManager={() => setEnvManagerOpen(true)}
   onImportCurl={() => setImportCurlOpen(true)}
+  onOpenSettings={() => setSettingsOpen(true)}
+/>
+
+<SettingsModal
+  isOpen={settingsOpen}
+  onClose={() => setSettingsOpen(false)}
 />
 
       <div className="flex flex-1 overflow-hidden">
@@ -239,6 +262,9 @@ function App() {
   onShowCode={() => setCodeModalOpen(true)}
   loading={loading}
   previewUrl={buildFinalUrl()}
+  proxyAvailable={proxyAvailable}
+  useProxy={useProxy}
+  setUseProxy={setUseProxy}
 />
           <RequestPanel
   headers={headers}

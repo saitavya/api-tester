@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/database'
 
-function Header({ onOpenEnvManager, onImportCurl }) {
+function Header({ onOpenEnvManager, onImportCurl, onOpenSettings }) {
   const environments = useLiveQuery(() => db.environments.toArray())
   const activeEnv = environments?.find((e) => e.isActive === 1)
 
@@ -50,6 +50,14 @@ function Header({ onOpenEnvManager, onImportCurl }) {
           title="Manage environments"
         >
           ⚙ Environments
+        </button>
+
+        <button
+          onClick={onOpenSettings}
+          className="text-slate-300 hover:text-white text-sm border border-slate-600 px-3 py-1.5 rounded hover:bg-slate-700"
+          title="Settings"
+        >
+          ⋯ Settings
         </button>
       </div>
     </header>
