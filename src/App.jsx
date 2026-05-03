@@ -25,6 +25,8 @@ function App() {
   const [useProxy, setUseProxy] = useState(false)
 const { settings: appSettings } = useSettings()
 const proxyAvailable = !!(appSettings.proxyUrl && appSettings.proxyUrl.trim())
+const [preRequestScript, setPreRequestScript] = useState('')
+const [testScript, setTestScript] = useState('')
 
   const [auth, setAuth] = useState({ type: 'none' })
 
@@ -276,6 +278,10 @@ const res = await fetch(actualUrl, fetchOptions)
   methodSupportsBody={methodSupportsBody}
   auth={auth}
   setAuth={setAuth}
+  preRequestScript={preRequestScript}
+  setPreRequestScript={setPreRequestScript}
+  testScript={testScript}
+  setTestScript={setTestScript}
 />
           <ResponsePanel response={response} loading={loading} />
         </div>
