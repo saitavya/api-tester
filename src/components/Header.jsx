@@ -16,7 +16,7 @@ function Header({ onOpenEnvManager, onImportCurl, onOpenSettings }) {
 
   return (
     <header className="bg-slate-800 border-b border-slate-700 px-6 py-3 flex items-center justify-between">
-      <h1 className="text-xl font-semibold text-white">API Tester</h1>
+      <h1 className="text-xl font-semibold text-white">Querious</h1>
 
       <div className="flex items-center gap-3">
         <button
