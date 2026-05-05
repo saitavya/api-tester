@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Modal from './Modal'
 import { useSettings } from '../hooks/useSettings'
-import { downloadBackup, parseBackup, applyBackup } from '../utils/backupRestore'
+import { downloadBackup, parseBackup, applyBackup } from '../utils/BackupRestore'
 import RestoreConfirmModal from './RestoreConfirmModal'
 
 function SettingsModal({ isOpen, onClose }) {
