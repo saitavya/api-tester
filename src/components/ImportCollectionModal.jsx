@@ -5,7 +5,7 @@ import { parsePostmanCollection } from '../utils/postmanImport'
 
 function ImportCollectionModal({ isOpen, onClose }) {
   const fileInputRef = useRef(null)
-  const [parsed, setParsed] = useState(null) // { collectionName, requests, warnings }
+  const [parsed, setParsed] = useState(null)
   const [error, setError] = useState('')
   const [importing, setImporting] = useState(false)
   const [collectionName, setCollectionName] = useState('')
@@ -71,6 +71,7 @@ function ImportCollectionModal({ isOpen, onClose }) {
     try {
       const collectionId = await db.collections.add({
         name: collectionName.trim() || parsed.collectionName,
+        uuid: crypto.randomUUID(),
         createdAt: Date.now(),
       })
 
@@ -84,6 +85,7 @@ function ImportCollectionModal({ isOpen, onClose }) {
         params: r.params,
         body: r.body,
         auth: r.auth,
+        uuid: crypto.randomUUID(),
         createdAt: now,
       }))
 
@@ -115,7 +117,9 @@ function ImportCollectionModal({ isOpen, onClose }) {
               disabled={importing || !collectionName.trim()}
               className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded font-medium"
             >
-              {importing ? 'Importing…' : `Import ${parsed.requests.length} request${parsed.requests.length === 1 ? '' : 's'}`}
+              {importing
+                ? 'Importing…'
+                : `Import ${parsed.requests.length} request${parsed.requests.length === 1 ? '' : 's'}`}
             </button>
           )}
         </>
@@ -138,7 +142,9 @@ function ImportCollectionModal({ isOpen, onClose }) {
             <p className="text-sm text-slate-300 mb-1">
               Drop your Postman collection here, or click to browse
             </p>
-            <p className="text-xs text-slate-500">Supports Postman v2 and v2.1 JSON exports</p>
+            <p className="text-xs text-slate-500">
+              Supports Postman v2 and v2.1 JSON exports
+            </p>
             <input
               ref={fileInputRef}
               type="file"
@@ -156,8 +162,8 @@ function ImportCollectionModal({ isOpen, onClose }) {
 
           <div className="mt-4 text-xs text-slate-500">
             <p>
-              <strong className="text-slate-400">How to export from Postman:</strong> right-click
-              a collection → Export → choose v2.1 → Save.
+              <strong className="text-slate-400">How to export from Postman:</strong>{' '}
+              right-click a collection → Export → choose v2.1 → Save.
             </p>
           </div>
         </div>
@@ -212,10 +218,7 @@ function ImportCollectionModal({ isOpen, onClose }) {
             </div>
           )}
 
-          <button
-            onClick={reset}
-            className="text-xs text-blue-400 hover:text-blue-300"
-          >
+          <button onClick={reset} className="text-xs text-blue-400 hover:text-blue-300">
             ← Choose a different file
           </button>
         </div>

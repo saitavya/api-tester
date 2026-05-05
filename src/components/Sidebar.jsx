@@ -39,8 +39,6 @@ function Sidebar({ onLoadRequest }) {
     return history.filter((item) => matchHistoryItem(item, query))
   }, [history, query])
 
-  // For collections, compute which match and which requests to show inside each.
-  // Auto-expand matching collections when there's a query.
   const filteredCollections = useMemo(() => {
     if (!collections) return []
     const allRequests = requests || []
@@ -53,7 +51,6 @@ function Sidebar({ onLoadRequest }) {
       .filter(Boolean)
   }, [collections, requests, query])
 
-  // When there's an active query, treat all matching collections as expanded.
   const isExpanded = (id) => {
     if (query) return true
     return !!expandedCollections[id]
@@ -88,7 +85,11 @@ function Sidebar({ onLoadRequest }) {
   }
 
   const createCollection = async (name) => {
-    await db.collections.add({ name, createdAt: Date.now() })
+    await db.collections.add({
+      name,
+      createdAt: Date.now(),
+      uuid: crypto.randomUUID(),
+    })
   }
 
   const toggleCollection = (id) => {
@@ -100,7 +101,6 @@ function Sidebar({ onLoadRequest }) {
       activeTab === id ? 'text-white border-b-2 border-blue-500' : 'text-slate-400 hover:text-white'
     }`
 
-  // --- Render ---
   return (
     <>
       <aside className="w-64 bg-slate-800 border-r border-slate-700 flex flex-col">
@@ -209,22 +209,22 @@ function Sidebar({ onLoadRequest }) {
                         </span>
                       </button>
                       <button
-  onClick={(e) => {
-    e.stopPropagation()
-    downloadCollection(col.name, colRequests)
-  }}
-  className="text-slate-500 hover:text-blue-400 ml-2 opacity-0 group-hover:opacity-100"
-  title="Export as Postman collection"
->
-  ↓
-</button>
-<button
-  onClick={() => askDeleteCollection(col.id)}
-  className="text-slate-500 hover:text-red-400 ml-2 opacity-0 group-hover:opacity-100"
-  title="Delete collection"
->
-  ✕
-</button>
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          downloadCollection(col.name, colRequests)
+                        }}
+                        className="text-slate-500 hover:text-blue-400 ml-2 opacity-0 group-hover:opacity-100"
+                        title="Export as Postman collection"
+                      >
+                        ↓
+                      </button>
+                      <button
+                        onClick={() => askDeleteCollection(col.id)}
+                        className="text-slate-500 hover:text-red-400 ml-2 opacity-0 group-hover:opacity-100"
+                        title="Delete collection"
+                      >
+                        ✕
+                      </button>
                     </div>
                     {expanded &&
                       colRequests.map((req) => (
@@ -256,7 +256,6 @@ function Sidebar({ onLoadRequest }) {
           )}
         </div>
 
-        {/* Result count footer when searching */}
         {query && (
           <div className="px-3 py-2 border-t border-slate-700 text-[10px] text-slate-500">
             {activeTab === 'history'

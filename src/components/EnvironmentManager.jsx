@@ -31,6 +31,7 @@ function EnvironmentManager({ onClose }) {
       name: 'New Environment',
       variables: [],
       isActive: 0,
+      uuid: crypto.randomUUID(),
       createdAt: Date.now(),
     })
     const env = await db.environments.get(newId)
@@ -57,7 +58,6 @@ function EnvironmentManager({ onClose }) {
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
       <div className="bg-slate-800 border border-slate-700 rounded-lg w-[800px] h-[500px] flex overflow-hidden">
-        {/* Left: list of environments */}
         <div className="w-56 bg-slate-900 border-r border-slate-700 flex flex-col">
           <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
             <h3 className="text-sm font-semibold">Environments</h3>
@@ -88,7 +88,6 @@ function EnvironmentManager({ onClose }) {
           </div>
         </div>
 
-        {/* Right: editor */}
         <div className="flex-1 flex flex-col">
           <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
             <h3 className="text-sm font-semibold">
